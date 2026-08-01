@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `X402.Extensions.Bazaar.build_extension/1` — factory for the `bazaar` discovery extension payload (`info` + `schema`), supporting HTTP and MCP inputs
+
 ## [0.3.3] - 2026-03-29
 
 ### Fixed

@@ -139,6 +139,7 @@ defmodule X402.MixProject do
           X402.Wallet
         ],
         Extensions: [
+          X402.Extensions.Bazaar,
           X402.Extensions.SIWX,
           X402.Extensions.SIWX.Verifier,
           X402.Extensions.SIWX.Verifier.Default,
