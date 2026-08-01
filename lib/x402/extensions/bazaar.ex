@@ -15,7 +15,10 @@ defmodule X402.Extensions.Bazaar do
     * `"mcp"` — a Model Context Protocol tool, identified by `toolName` and
       described by a JSON Schema `inputSchema` for its arguments.
 
-  `info.output` optionally describes the expected response format.
+  `info.output` describes the expected response format. It is always present
+  (defaulting to a `"json"` content type). The schema's `output` property
+  declares `type` (and optionally `format`) as strings and `example` as an
+  object, optionally constrained by the `:schema` option.
 
   The factory returns a plain, string-keyed map ready for JSON encoding:
 
@@ -314,7 +317,9 @@ defmodule X402.Extensions.Bazaar do
   # --- output ---
 
   @spec put_output(map(), keyword() | nil) :: map()
-  defp put_output(info, nil), do: info
+  defp put_output(info, nil) do
+    Map.put(info, "output", %{"type" => @default_output_type})
+  end
 
   defp put_output(info, output) do
     base = %{"type" => Keyword.fetch!(output, :type)}
@@ -328,26 +333,32 @@ defmodule X402.Extensions.Bazaar do
   end
 
   @spec put_output_schema(map(), keyword() | nil) :: map()
-  defp put_output_schema(schema, nil), do: schema
+  defp put_output_schema(schema, nil) do
+    put_output_schema(schema, type: @default_output_type)
+  end
 
   defp put_output_schema(schema, output) do
-    example =
-      case Keyword.get(output, :schema) do
-        nil -> %{"type" => "object"}
-        output_schema -> Map.merge(%{"type" => "object"}, output_schema)
-      end
+    properties =
+      %{"type" => %{"type" => "string"}}
+      |> maybe_put_any("format", format_schema(Keyword.get(output, :format)))
+      |> Map.put("example", output_example_schema(Keyword.get(output, :schema)))
 
     output_property = %{
       "type" => "object",
-      "properties" => %{
-        "type" => %{"type" => "string"},
-        "example" => example
-      },
+      "properties" => properties,
       "required" => ["type"]
     }
 
     put_in(schema, ["properties", "output"], output_property)
   end
+
+  @spec format_schema(term() | nil) :: map() | nil
+  defp format_schema(nil), do: nil
+  defp format_schema(_format), do: %{"type" => "string"}
+
+  @spec output_example_schema(map() | nil) :: map()
+  defp output_example_schema(nil), do: %{"type" => "object"}
+  defp output_example_schema(schema), do: Map.merge(%{"type" => "object"}, schema)
 
   # --- option accessors ---
 

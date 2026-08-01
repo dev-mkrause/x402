@@ -168,20 +168,55 @@ defmodule X402.Extensions.BazaarTest do
   end
 
   describe "output" do
-    test "is omitted when not provided" do
+    test "is present by default with json output type" do
       ext = Bazaar.build_extension(method: :get)
-      refute Map.has_key?(ext["info"], "output")
-      refute Map.has_key?(ext["schema"]["properties"], "output")
-    end
-
-    test "defaults to json type in info" do
-      ext = Bazaar.build_extension(method: :get, output: [])
 
       assert ext["info"]["output"] == %{"type" => "json"}
 
       output_schema = ext["schema"]["properties"]["output"]
       assert output_schema["required"] == ["type"]
+      assert output_schema["properties"]["type"] == %{"type" => "string"}
       assert output_schema["properties"]["example"] == %{"type" => "object"}
+      refute Map.has_key?(output_schema["properties"], "format")
+    end
+
+    test "reflects concrete values in info and schema" do
+      ext =
+        Bazaar.build_extension(
+          method: :get,
+          output: %{type: "Set", format: "JSON", example: %{landmarks: ""}}
+        )
+
+      assert ext["info"]["output"] == %{
+               "type" => "Set",
+               "format" => "JSON",
+               "example" => %{landmarks: ""}
+             }
+
+      output = ext["schema"]["properties"]["output"]
+      assert output["properties"]["type"] == %{"type" => "string"}
+      assert output["properties"]["format"] == %{"type" => "string"}
+      assert output["properties"]["example"] == %{"type" => "object"}
+    end
+
+    test "schema output example is declared as an object" do
+      ext =
+        Bazaar.build_extension(
+          method: :get,
+          output: [
+            example: %{
+              "count" => 3,
+              "ok" => true,
+              "tags" => ["a"],
+              "ratio" => 1.5,
+              "mixed" => [1, "a"]
+            }
+          ]
+        )
+
+      assert ext["schema"]["properties"]["output"]["properties"]["example"] == %{
+               "type" => "object"
+             }
     end
 
     test "accepts a keyword list with format, example, and schema" do
